@@ -19,8 +19,8 @@
 """
 Module:       NUMTFinder
 Description:  Nuclear mitochondrial fragment (NUMT) search tool
-Version:      0.1.0
-Last Edit:    16/02/21
+Version:      0.1.1
+Last Edit:    17/02/21
 Copyright (C) 2021  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -78,6 +78,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     '''
     # 0.0.0 - Initial Compilation.
     # 0.1.0 - Added dochtml=T and modified docstring for standalone git repo.
+    # 0.1.1 - Fixed bug with default fragmerge=INT. Now set to 8kb.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -94,7 +95,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('NUMTFinder', '0.1.0', 'February 2021', '2021')
+    (program, version, last_edit, copy_right) = ('NUMTFinder', '0.1.1', 'February 2021', '2021')
     description = 'Nuclear mitochondrial fragment (NUMT) search tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -205,7 +206,7 @@ class NUMTFinder(rje_obj.RJE_Object):
         self._setDefaults(str='None',bool=False,int=0,num=0.0,obj=None,setlist=True,setdict=True,setfile=True)
         self.setStr({})
         self.setBool({'BlockFas':True,'Circle':True,'DocHTML':False,'FragFas':False,'FragRevComp':True,'Stranded':False})
-        self.setInt({})
+        self.setInt({'FragMerge':8000})
         self.setNum({})
         ### ~ Other Attributes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         self._setForkAttributes()   # Delete if no forking

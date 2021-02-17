@@ -1,7 +1,7 @@
 # NUMTFinder: Nuclear mitochondrial fragment (NUMT) search tool
 
 ```
-NUMTFinder v0.1.0
+NUMTFinder v0.1.1
 ```
 
 For a better rendering and navigation of this document, please download and open [`./docs/numtfinder.docs.html`](./docs/numtfinder.docs.html), or visit <https://slimsuite.github.io/numtfinder/>.
