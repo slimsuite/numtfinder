@@ -422,7 +422,9 @@ class NUMTFinder(rje_obj.RJE_Object):
 
         Fragments are then saved to `$BASEFILE.numtfrag.tdt`:
 
-        ```SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtStart,mtEnd```
+        ```
+        SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtStart,mtEnd
+        ```
 
 
         ## NUMT Blocks
@@ -436,7 +438,9 @@ class NUMTFinder(rje_obj.RJE_Object):
 
         Blocks are then saved to `$BASEFILE.numtblock.tdt`:
 
-        ```SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtFrag,FragNum,FragLen,FragGaps```
+        ```
+        SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtFrag,FragNum,FragLen,FragGaps
+        ```
 
         **NOTE:** NUMT block fasta output is not yet implemented. Please contact the author if this is desired.
 

@@ -362,39 +362,50 @@ blockfas=T/F    : Whether to generate a combined fasta file of NUMT block region
 <h2 number="3.5"><span class="header-section-number">3.5</span> NUMT fragments</h2>
 <p>Main NUMTFinder output is a table of predicted NUMT fragments, generated from the filtered GABLAM results. The strand (<code>+</code>/<code>-</code>) is added and start/end positions modified to always be relative to the +ve strand. Unless <code>circle=F</code>, any hits over-shooting the original circular mtDNA will have their positions modified to match the original mtDNA sequence. For example, a match to region 16001-18000 of a double-length 17kb mtDNA will become a match to region 16001-1000. Any matches where <code>mtEnd</code> is smaller than <code>mtStart</code> indicates a hit of this nature that spans the circularisation point.</p>
 <p>Fragments are then saved to <code>$BASEFILE.numtfrag.tdt</code>:</p>
-<pre class="seqname,start,end,strand,bitscore,expect,length,identity,mtstart,mtend```"><code>
-
-## NUMT Blocks
-
-Next, NUMTFinder merges nearby fragments into longer NUMT &quot;blocks&quot;. This is done simply on proximity in the
-assembly sequence. By default, NUMT fragments within 8kb of each other will be merged into a common block.
-This is controlled by `fragmerge=INT` (bp). Where merged NUMT fragments are on both strands, `Strand` will be
-set to `+/-`. The list of `FragNum` fragment positions will be output in the `mtFrag` field, with their combined
-length in `FragLen`. Note that this is their length in the assembly, *not* the BLAST alignment `Length`, which is
-summed in the `Length` field. The combined non-NUMT regions between merged fragments is given in `FragGaps`.
-
-Blocks are then saved to `$BASEFILE.numtblock.tdt`:
-
-```SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtFrag,FragNum,FragLen,FragGaps```
-
-**NOTE:** NUMT block fasta output is not yet implemented. Please contact the author if this is desired.
-
-## Coverage plot
-
-The final part of the NUMTFinder pipeline is to map all the (filtered) NUMT fragments back on to the original
-mtDNA and generate plot of the depth of coverage by NUMT fragments across the mtDNA genome. Note that for this
-output, any fragments spanning the circularisation point *will* be divided into two fragments. This will not
-affect the depth plot, but will alter the accompanying &quot;readlen&quot; plot.
-
-
----
-
-# NUMTFinder Outputs
-
-NUMTFinder output will be named using the `basefile=X` prefix (hereon `$BASEFILE`), which is `numtfinder` by
-default. The default NUMTFinder outputs are:
-</code></pre>
-<p>|– numtfasta/ | +– $MTACC2X.fas |– $BASEFILE.coverage.tdt |– $BASEFILE.depthplot.tdt |– $BASEFILE.dirnlenplot.tdt |– $BASEFILE.log |– $BASEFILE.mtdna2X.acc.fas |– $BASEFILE.mtdna2X.fasta |– $BASEFILE.mtdna2X.fasta.index |– $BASEFILE.numtblock.tdt |– $BASEFILE.numtfrag.tdt |– $BASEFILE.numtsearch.blast |– $BASEFILE.numtsearch.gablam.tdt |– $BASEFILE.numtsearch.hitsum.tdt |– $BASEFILE.numtsearch.local.gff |– $BASEFILE.numtsearch.local.sam |– $BASEFILE.numtsearch.local.tdt |– $BASEFILE.numtsearch.unique.gff |– $BASEFILE.numtsearch.unique.sam |– $BASEFILE.numtsearch.unique.tdt |– $BASEFILE.readlenplot.tdt |– $BASEFILE.readlen.tdt |– $BASEFILE.rid.tdt +– $BASEFILE.SAMPlots/ |– <span class="math inline">\(BASEFILE.depth.\)</span>MTACC.png +– <span class="math inline">\(BASEFILE.readlen.\)</span>MTACC.png ```</p>
+<pre><code>SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtStart,mtEnd</code></pre>
+</div>
+<div id="numt-blocks" class="section level2" number="3.6">
+<h2 number="3.6"><span class="header-section-number">3.6</span> NUMT Blocks</h2>
+<p>Next, NUMTFinder merges nearby fragments into longer NUMT “blocks”. This is done simply on proximity in the assembly sequence. By default, NUMT fragments within 8kb of each other will be merged into a common block. This is controlled by <code>fragmerge=INT</code> (bp). Where merged NUMT fragments are on both strands, <code>Strand</code> will be set to <code>+/-</code>. The list of <code>FragNum</code> fragment positions will be output in the <code>mtFrag</code> field, with their combined length in <code>FragLen</code>. Note that this is their length in the assembly, <em>not</em> the BLAST alignment <code>Length</code>, which is summed in the <code>Length</code> field. The combined non-NUMT regions between merged fragments is given in <code>FragGaps</code>.</p>
+<p>Blocks are then saved to <code>$BASEFILE.numtblock.tdt</code>:</p>
+<pre><code>SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtFrag,FragNum,FragLen,FragGaps</code></pre>
+<p><strong>NOTE:</strong> NUMT block fasta output is not yet implemented. Please contact the author if this is desired.</p>
+</div>
+<div id="coverage-plot" class="section level2" number="3.7">
+<h2 number="3.7"><span class="header-section-number">3.7</span> Coverage plot</h2>
+<p>The final part of the NUMTFinder pipeline is to map all the (filtered) NUMT fragments back on to the original mtDNA and generate plot of the depth of coverage by NUMT fragments across the mtDNA genome. Note that for this output, any fragments spanning the circularisation point <em>will</em> be divided into two fragments. This will not affect the depth plot, but will alter the accompanying “readlen” plot.</p>
+<hr />
+</div>
+</div>
+<div id="numtfinder-outputs" class="section level1" number="4">
+<h1 number="4"><span class="header-section-number">4</span> NUMTFinder Outputs</h1>
+<p>NUMTFinder output will be named using the <code>basefile=X</code> prefix (hereon <code>$BASEFILE</code>), which is <code>numtfinder</code> by default. The default NUMTFinder outputs are:</p>
+<pre><code>|-- numtfasta/
+|   +-- $MTACC2X.fas
+|-- $BASEFILE.coverage.tdt
+|-- $BASEFILE.depthplot.tdt
+|-- $BASEFILE.dirnlenplot.tdt
+|-- $BASEFILE.log
+|-- $BASEFILE.mtdna2X.acc.fas
+|-- $BASEFILE.mtdna2X.fasta
+|-- $BASEFILE.mtdna2X.fasta.index
+|-- $BASEFILE.numtblock.tdt
+|-- $BASEFILE.numtfrag.tdt
+|-- $BASEFILE.numtsearch.blast
+|-- $BASEFILE.numtsearch.gablam.tdt
+|-- $BASEFILE.numtsearch.hitsum.tdt
+|-- $BASEFILE.numtsearch.local.gff
+|-- $BASEFILE.numtsearch.local.sam
+|-- $BASEFILE.numtsearch.local.tdt
+|-- $BASEFILE.numtsearch.unique.gff
+|-- $BASEFILE.numtsearch.unique.sam
+|-- $BASEFILE.numtsearch.unique.tdt
+|-- $BASEFILE.readlenplot.tdt
+|-- $BASEFILE.readlen.tdt
+|-- $BASEFILE.rid.tdt
++-- $BASEFILE.SAMPlots/
+    |-- $BASEFILE.depth.$MTACC.png
+    +-- $BASEFILE.readlen.$MTACC.png</code></pre>
 <p>The main NUMTFinder outputs are:</p>
 <ul>
 <li>$BASEFILE.log</li>
@@ -407,7 +418,6 @@ default. The default NUMTFinder outputs are:
 </ul>
 <p>More details will be added in future releases.</p>
 <p><br> <small>© 2021 Richard Edwards | <a href="mailto:richard.edwards@unsw.edu.au" class="email">richard.edwards@unsw.edu.au</a></small></p>
-</div>
 </div>
 
 

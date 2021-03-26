@@ -160,7 +160,9 @@ that spans the circularisation point.
 
 Fragments are then saved to `$BASEFILE.numtfrag.tdt`:
 
-```SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtStart,mtEnd```
+```
+SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtStart,mtEnd
+```
 
 
 ## NUMT Blocks
@@ -174,7 +176,9 @@ summed in the `Length` field. The combined non-NUMT regions between merged fragm
 
 Blocks are then saved to `$BASEFILE.numtblock.tdt`:
 
-```SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtFrag,FragNum,FragLen,FragGaps```
+```
+SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtFrag,FragNum,FragLen,FragGaps
+```
 
 **NOTE:** NUMT block fasta output is not yet implemented. Please contact the author if this is desired.
 
