@@ -1,7 +1,7 @@
 ---
-title: "NUMTFinder V0.1.1 Documentation"
+title: "NUMTFinder V0.2.0 Documentation"
 author: "Richard J. Edwards"
-date: "2021-02-17"
+date: "2021-03-26"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -38,6 +38,8 @@ Plans for future releases include:
 * incorporation of additional search methods (LAST or kmers)
 * assembly masking options
 * options to restrict NUMT blocks to fully collinear hits.
+* automated running of Diploidocus regcheck on fragments and blocks
+* depth profile of coverage across mitochondrion
 
 ---
 

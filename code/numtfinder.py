@@ -19,8 +19,10 @@
 """
 Module:       NUMTFinder
 Description:  Nuclear mitochondrial fragment (NUMT) search tool
-Version:      0.1.1
-Last Edit:    17/02/21
+Version:      0.2.0
+Last Edit:    25/03/21
+Citation:     Edwards RJ et al. (2021), BMC Genomics [PMID: 33726677]
+GitHub:       https://github.com/slimsuite/numtfinder
 Copyright (C) 2021  Richard J. Edwards - See source code for GNU License Notice
 
 Function:
@@ -39,6 +41,7 @@ Function:
     * incorporation of additional search methods (LAST or kmers)
     * assembly masking options
     * options to restrict NUMT blocks to fully collinear hits.
+    * automated running of Diploidocus regcheck on fragments and blocks
 
 Commandline:
     ### ~ Main NUMTFinder run options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -56,7 +59,10 @@ Commandline:
     ### ~ NUMTFinder block options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     fragmerge=X     : Max Length of gaps between fragmented local hits to merge [8000]
     stranded=T/F    : Whether to only merge fragments on the same strand [False]
-    ### ~ Sequence output options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    ### ~ NUMTFinder output options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    localgff=T/F    : Whether to output GFF format files of the NUMT hits against the genome [True]
+    localsam=T/F    : Whether to output SAM format files of the NUMT hits against the genome [True]
+    depthplot=T/F   : Whether to output mtDNA depth plots of sequence coverage (requires R) [True]
     fasdir=PATH     : Directory in which to save fasta files [numtfasta/]
     fragfas=T/F     : Whether to output NUMT fragment to fasta file [False]
     fragrevcomp=T/F : Whether to reverse-complement DNA fragments that are on reverse strand to query [True]
@@ -71,7 +77,7 @@ slimsuitepath = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__
 sys.path.append(os.path.join(slimsuitepath,'libraries/'))
 sys.path.append(os.path.join(slimsuitepath,'tools/'))
 ### User modules - remember to add *.__doc__ to cmdHelp() below ###
-import rje, rje_db, rje_obj, rje_rmd, rje_seqlist
+import rje, rje_db, rje_obj, rje_rmd, rje_seqlist, rje_samtools
 import gablam
 #########################################################################################################################
 def history():  ### Program History - only a method for PythonWin collapsing! ###
@@ -79,6 +85,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.0.0 - Initial Compilation.
     # 0.1.0 - Added dochtml=T and modified docstring for standalone git repo.
     # 0.1.1 - Fixed bug with default fragmerge=INT. Now set to 8kb.
+    # 0.2.0 - Added SAM output and depth profile of coverage across mitochondrion.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -91,11 +98,15 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
     # [ ] : Add to SLiMSuite or SeqSuite.
     # [ ] : Add function to give other genomes to tile and then analyse for coverage with Diploidocus.
     # [ ] : Check and replace forks=INT with threads=INT.
+    # [ ] : Add long read coverage analysis.
+    # [Y] : Depth profile of coverage across mitochondrion
+    # [ ] : Add option to exclude certain sequences (e.g. the mitochondrion!)
+    # [ ] : Add option to identify and exclude hits above a certain length and identity (e.g. the mitochondrion!)
     '''
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('NUMTFinder', '0.1.1', 'February 2021', '2021')
+    (program, version, last_edit, copy_right) = ('NUMTFinder', '0.2.0', 'March 2021', '2021')
     description = 'Nuclear mitochondrial fragment (NUMT) search tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -260,6 +271,8 @@ class NUMTFinder(rje_obj.RJE_Object):
         * incorporation of additional search methods (LAST or kmers)
         * assembly masking options
         * options to restrict NUMT blocks to fully collinear hits.
+        * automated running of Diploidocus regcheck on fragments and blocks
+        * depth profile of coverage across mitochondrion
 
         ---
 
@@ -328,6 +341,8 @@ class NUMTFinder(rje_obj.RJE_Object):
             ## ~ [2d] ~ Output NUMT Block sequences ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             if self.getBool('BlockFas'):
                 self.printLog('#SORRY','NUMT block fasta output not yet implemented!')
+            ## ~ [2e] ~ Coverage output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+            self.coverageOutputs()
             return
         except:
             self.errorLog(self.zen())
@@ -417,7 +432,8 @@ class NUMTFinder(rje_obj.RJE_Object):
             ### ~ [2] Perform NUMT search ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             gabdefaults = ['blastp=blastn','blasttask=blastn','blaste=1e-4','fasdir=numtfasta/','keepblast=T']
             gabcmd = ['seqin={0}'.format(self.getStr('mtQuery')),'searchdb={0}'.format(self.getStr('SeqIn')),
-                      'basefile={0}.numtsearch'.format(self.basefile()),'localgff=T','localunique=T','fullblast=T',
+                      'basefile={0}.numtsearch'.format(self.basefile()),'localgff=T','localsam=T',
+                      'localunique=T','fullblast=T',
                       'localmin={0}'.format(self.getInt('MinFragLen'))]
             gabobj = gablam.GABLAM(self.log,gabdefaults+self.cmd_list+gabcmd)
             gabobj.run()
@@ -498,13 +514,48 @@ class NUMTFinder(rje_obj.RJE_Object):
             blockdb.saveToFile()
         except: self.errorLog('%s.numtProcess error' % self.prog())
 #########################################################################################################################
-    def _method(self):      ### Generic method
+    def coverageOutputs(self):  ### Generates depth plots for mitochondrial genome
         '''
-        Generic method. Add description here (and arguments.)
+        Generates depth plots for mitochondrial genome.
         '''
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            return
-        except: self.errorLog('%s.method error' % self.prog())
+            samcmd = ['seqin={0}'.format(self.getStr('mtQuery'))]
+            sam = rje_samtools.SAMtools(self.log,['depthplot=T','readlen=T']+self.cmd_list+samcmd)
+            sam.obj['DB'] = self.obj['DB']
+            mtlen = self.getInt('mtLen')
+            seq = self.obj['mtDNA'].seqs()[0]
+            ### ~ [2] Generate 'rid' table from numtfrag table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            fragdb = self.db('numtfrag')
+            riddb = self.db().copyTable(fragdb, 'rid')
+            #i# ['RID','Locus','Start','End','RLen','MLen','Clip5','Clip3']
+            riddb.autoID()
+            riddb.newKey(['#'])
+            riddb.addField('Locus',evalue=self.obj['mtDNA'].shortName(seq))
+            riddb.renameField('Length', 'RLen')
+            riddb.setFields(['#','Locus','mtStart','mtEnd','RLen','Strand'])
+            riddb.renameField('mtStart', 'Start')
+            riddb.renameField('mtEnd', 'End')
+            splitx = 0
+            nextid = max(riddb.dataList(riddb.entries(),'#')) + 1
+            self.printLog('#SPLIT','Splitting fragments that span circularisation for depth plots')
+            for rentry in riddb.entries():
+                #i# Split hits that go off the end
+                if rentry['Strand'] == '+' and rentry['Start'] > rentry['End']:
+                    newentry = rje.combineDict({},rentry)
+                    newentry['End'] = mtlen
+                    newentry['#'] = nextid
+                    riddb.addEntry(newentry)
+                    rentry['Start'] = 1
+                    splitx += 1
+                    nextid += 1
+            self.printLog('#SPLIT','Split {0} NUMT fragments that span circularisation for depth plots'.format(splitx))
+            riddb.renameField('#','RID')
+            riddb.newKey(['RID'])
+            if self.dev() or self.debugging(): riddb.saveToFile()
+            ### ~ [3] Generate depth plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+            sam.coverageFromRID(None, depthplot=sam.getBool('DepthPlot'))
+            if sam.getBool('ReadLen'): sam.coverageFromRID(None, depthplot=True, readlen=True)
+        except: self.errorLog('%s.coverageOutputs error' % self.prog())
 #########################################################################################################################
 ### End of SECTION II: New Class                                                                                        #
 #########################################################################################################################

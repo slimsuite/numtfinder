@@ -1,7 +1,7 @@
 # NUMTFinder: Nuclear mitochondrial fragment (NUMT) search tool
 
 ```
-NUMTFinder v0.1.1
+NUMTFinder v0.2.0
 ```
 
 For a better rendering and navigation of this document, please download and open [`./docs/numtfinder.docs.html`](./docs/numtfinder.docs.html), or visit <https://slimsuite.github.io/numtfinder/>.
@@ -24,6 +24,8 @@ Plans for future releases include:
 * incorporation of additional search methods (LAST or kmers)
 * assembly masking options
 * options to restrict NUMT blocks to fully collinear hits.
+* automated running of Diploidocus regcheck on fragments and blocks
+* depth profile of coverage across mitochondrion
 
 ---
 
