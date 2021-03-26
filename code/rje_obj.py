@@ -341,7 +341,9 @@ class RJE_Object(object):     ### Metaclass for inheritance by other classes
         elif self.obj['Parent']: return self.obj['Parent'].getInt(key,default,checkdata)
         else: return default
 #########################################################################################################################
-    def getPerc(self,key=None,default=0.0,checkdata=False): return self.getNum(key,default,checkdata)/100.0
+    def getPerc(self,key=None,default=0.0,checkdata=False): ### Returns a 'perc' attribute type as a proportion
+        '''Convert stored 0-100 scale number, e.g. X=PERC variable, as a 0-1 float.'''
+        return self.getNum(key,default,checkdata)/100.0
     def getNum(self,key=None,default=0.0,checkdata=False):    ### Returns float attribute
         '''Returns float attribute.'''
         try:

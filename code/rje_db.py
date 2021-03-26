@@ -1847,6 +1847,9 @@ class Table(rje.RJE_Object):
         except:
             self.errorLog('DropEntry error!')
 #########################################################################################################################
+    def dropEntryList(self,entries,inverse=False,log=True,logtxt=''): return self.dropEntries(entries,inverse,log,logtxt,purelist=True)
+    def dropEntriesFromKeys(self,keys,inverse=False,log=True,logtxt=''): return self.dropEntries(entries,inverse,log,logtxt,keylist=True)
+#########################################################################################################################
     def dropEntries(self,filters,inverse=False,log=True,logtxt='',purelist=False,keylist=False):    ### Drops certain entries from Table
         '''
         Drops certain entries from Table.
