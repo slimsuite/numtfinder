@@ -1,7 +1,7 @@
 # NUMTFinder: Nuclear mitochondrial fragment (NUMT) search tool
 
 ```
-NUMTFinder v0.3.0
+NUMTFinder v0.4.1
 ```
 
 For a better rendering and navigation of this document, please download and open [`./docs/numtfinder.docs.html`](./docs/numtfinder.docs.html), or visit <https://slimsuite.github.io/numtfinder/>.
@@ -86,6 +86,7 @@ fasdir=PATH     : Directory in which to save fasta files [numtfasta/]
 fragfas=T/F     : Whether to output NUMT fragment to fasta file [True]
 fragrevcomp=T/F : Whether to reverse-complement DNA fragments that are on reverse strand to query [True]
 blockfas=T/F    : Whether to generate a combined fasta file of NUMT block regions (positive strand) [True]
+nocovfas=T/F    : Whether to output the regions of mtDNA with no coverage & peak coverage [False]
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 ```
 
@@ -189,6 +190,14 @@ mtDNA and generate plot of the depth of coverage by NUMT fragments across the mt
 output, any fragments spanning the circularisation point *will* be divided into two fragments. This will not
 affect the depth plot, but will alter the accompanying "readlen" plot.
 
+If `nocovfas=T` then any regions of the mtDNA without any NUMT coverage will be output to `$BASEFILE.numtfrag.nocov.fasta`.
+The region with maximum coverage will also be output to `$BASEFILE.numtfrag.peak.fasta`. Note that this might be
+quite short, in which case you might want to use `seqsuite` or `rje_seqlist` to extract a region of interest,
+based on either the delimited table output or the coverage depth plot, e.g.:
+
+    python $CODEPATH/seqsuite.py -seqin $SEQIN -reformat region -region $START,$END -seqout $SEQOUT -basefile $PREFIX
+
+    python $CODEPATH/rje_seqlist.py -seqin $SEQIN -reformat region -region $START,$END -seqout $SEQOUT -basefile $PREFIX
 
 ---
 
@@ -200,15 +209,24 @@ default. The default NUMTFinder outputs are:
 ```
 |-- numtfasta/
 |   +-- $MTACC2X.fas
-|-- $BASEFILE.coverage.tdt
-|-- $BASEFILE.depthplot.tdt
-|-- $BASEFILE.dirnlenplot.tdt
 |-- $BASEFILE.log
 |-- $BASEFILE.mtdna2X.acc.fas
 |-- $BASEFILE.mtdna2X.fasta
 |-- $BASEFILE.mtdna2X.fasta.index
+|-- $BASEFILE.numtblock.fasta
 |-- $BASEFILE.numtblock.tdt
 |-- $BASEFILE.numtfrag.tdt
+|-- $BASEFILE.numtfrag.coverage.tdt
+|-- $BASEFILE.numtfrag.depthplot.tdt
+|-- $BASEFILE.numtfrag.dirnlenplot.tdt
+|-- $BASEFILE.numtfrag.nocov.fasta
+|-- $BASEFILE.numtfrag.peak.fasta
+|-- $BASEFILE.numtfrag.readlenplot.tdt
+|-- $BASEFILE.numtfrag.readlen.tdt
+|-- $BASEFILE.numtfrag.rid.tdt
++-- $BASEFILE.numtfrag.SAMPlots/
+    |-- $BASEFILE.numtfrag.depth.$MTACC.png
+    +-- $BASEFILE.numtfrag.readlen.$MTACC.png
 |-- $BASEFILE.numtsearch.blast
 |-- $BASEFILE.numtsearch.gablam.tdt
 |-- $BASEFILE.numtsearch.hitsum.tdt
@@ -218,12 +236,6 @@ default. The default NUMTFinder outputs are:
 |-- $BASEFILE.numtsearch.unique.gff
 |-- $BASEFILE.numtsearch.unique.sam
 |-- $BASEFILE.numtsearch.unique.tdt
-|-- $BASEFILE.readlenplot.tdt
-|-- $BASEFILE.readlen.tdt
-|-- $BASEFILE.rid.tdt
-+-- $BASEFILE.SAMPlots/
-    |-- $BASEFILE.depth.$MTACC.png
-    +-- $BASEFILE.readlen.$MTACC.png
 ```
 
 The main NUMTFinder outputs are:
@@ -233,7 +245,7 @@ The main NUMTFinder outputs are:
 * $BASEFILE.numtsearch.unique.sam
 * $BASEFILE.numtblock.tdt
 * $BASEFILE.numtfrag.tdt
-* $BASEFILE.SAMPlots/$BASEFILE.depth.$MTACC.png
+* $BASEFILE.numtfrag.SAMPlots/$BASEFILE.numtfrag.depth.$MTACC.png
 * numtfasta/$MTACC2X.fas
 
 More details will be added in future releases.
