@@ -1,7 +1,7 @@
 ---
-title: "NUMTFinder V0.4.1 Documentation"
+title: "NUMTFinder V0.5.1 Documentation"
 author: "Richard J. Edwards"
-date: "2021-04-04"
+date: "2021-04-07"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css
@@ -96,11 +96,13 @@ stranded=T/F    : Whether to only merge fragments on the same strand [False]
 ### ~ NUMTFinder output options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 localgff=T/F    : Whether to output GFF format files of the NUMT hits against the genome [True]
 localsam=T/F    : Whether to output SAM format files of the NUMT hits against the genome [True]
-depthplot=T/F   : Whether to output mtDNA depth plots of sequence coverage (requires R) [True]
 fasdir=PATH     : Directory in which to save fasta files [numtfasta/]
 fragfas=T/F     : Whether to output NUMT fragment to fasta file [True]
 fragrevcomp=T/F : Whether to reverse-complement DNA fragments that are on reverse strand to query [True]
 blockfas=T/F    : Whether to generate a combined fasta file of NUMT block regions (positive strand) [True]
+depthplot=T/F   : Whether to output mtDNA depth plots of sequence coverage (requires R) [True]
+depthsmooth=X   : Smooth out any read plateaus < X nucleotides in length [0]
+peaksmooth=X    : Smooth out Xcoverage peaks < X depth difference to flanks (<1 = %Median) [0]
 nocovfas=T/F    : Whether to output the regions of mtDNA with no coverage & peak coverage [False]
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 ```
@@ -196,14 +198,23 @@ Blocks are then saved to `$BASEFILE.numtblock.tdt`:
 SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtFrag,FragNum,FragLen,FragGaps
 ```
 
-**NOTE:** NUMT block fasta output is not yet implemented. Please contact the author if this is desired.
+If `blockfas=T` then blocks are also output to `$BASEFILE.numtblock.fasta`.
+
 
 ## Coverage plot
 
 The final part of the NUMTFinder pipeline is to map all the (filtered) NUMT fragments back on to the original
 mtDNA and generate plot of the depth of coverage by NUMT fragments across the mtDNA genome. Note that for this
 output, any fragments spanning the circularisation point *will* be divided into two fragments. This will not
-affect the depth plot, but will alter the accompanying "readlen" plot.
+affect the depth plot, but will alter the accompanying "readlen" plot. By default, the rje_samtools depth plot
+smoothing is turned off for NUMTFinder. This can be set with:
+
+```
+depthsmooth=X   : Smooth out any read plateaus < X nucleotides in length [0]
+peaksmooth=X    : Smooth out Xcoverage peaks < X depth difference to flanks (<1 = %Median) [0]
+```
+
+To revert to rje_samtools defaults (used pre-v0.5.0), set `depthsmooth=200 peaksmooth=0.05`.
 
 If `nocovfas=T` then any regions of the mtDNA without any NUMT coverage will be output to `$BASEFILE.numtfrag.nocov.fasta`.
 The region with maximum coverage will also be output to `$BASEFILE.numtfrag.peak.fasta`. Note that this might be

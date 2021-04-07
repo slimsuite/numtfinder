@@ -19,8 +19,8 @@
 """
 Module:       NUMTFinder
 Description:  Nuclear mitochondrial fragment (NUMT) search tool
-Version:      0.4.1
-Last Edit:    04/04/21
+Version:      0.5.1
+Last Edit:    07/04/21
 Citation:     Edwards RJ et al. (2021), BMC Genomics [PMID: 33726677]
 GitHub:       https://github.com/slimsuite/numtfinder
 Copyright (C) 2021  Richard J. Edwards - See source code for GNU License Notice
@@ -68,12 +68,14 @@ Commandline:
     ### ~ NUMTFinder output options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     localgff=T/F    : Whether to output GFF format files of the NUMT hits against the genome [True]
     localsam=T/F    : Whether to output SAM format files of the NUMT hits against the genome [True]
-    depthplot=T/F   : Whether to output mtDNA depth plots of sequence coverage (requires R) [True]
     fasdir=PATH     : Directory in which to save fasta files [numtfasta/]
     fragfas=T/F     : Whether to output NUMT fragment to fasta file [True]
     fragrevcomp=T/F : Whether to reverse-complement DNA fragments that are on reverse strand to query [True]
     blockfas=T/F    : Whether to generate a combined fasta file of NUMT block regions (positive strand) [True]
     nocovfas=T/F    : Whether to output the regions of mtDNA with no coverage & peak coverage [False]
+    depthplot=T/F   : Whether to output mtDNA depth plots of sequence coverage (requires R) [True]
+    depthsmooth=X   : Smooth out any read plateaus < X nucleotides in length [0]
+    peaksmooth=X    : Smooth out Xcoverage peaks < X depth difference to flanks (<1 = %Median) [0]
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 """
 #########################################################################################################################
@@ -96,6 +98,9 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.3.0 - Added additional exclusion, flagging and filtering of possible mtDNA.
     # 0.4.0 - Added output of zero-coverage mtDNA regions, block fasta, and coverage summary.
     # 0.4.1 - Fixed bug when no NUMTs. Added a bit more documentation of output.
+    # 0.4.2 - Fixed coverage output bugs for -ve strand hits over circularisation spot. Improved pickup of partial run.
+    # 0.5.0 - Modified depth plot defaults to remove the smoothing.
+    # 0.5.1 - Fixed bug with peak fasta output.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -117,7 +122,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('NUMTFinder', '0.4.1', 'April 2021', '2021')
+    (program, version, last_edit, copy_right) = ('NUMTFinder', '0.5.1', 'April 2021', '2021')
     description = 'Nuclear mitochondrial fragment (NUMT) search tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -348,11 +353,13 @@ class NUMTFinder(rje_obj.RJE_Object):
         ### ~ NUMTFinder output options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         localgff=T/F    : Whether to output GFF format files of the NUMT hits against the genome [True]
         localsam=T/F    : Whether to output SAM format files of the NUMT hits against the genome [True]
-        depthplot=T/F   : Whether to output mtDNA depth plots of sequence coverage (requires R) [True]
         fasdir=PATH     : Directory in which to save fasta files [numtfasta/]
         fragfas=T/F     : Whether to output NUMT fragment to fasta file [True]
         fragrevcomp=T/F : Whether to reverse-complement DNA fragments that are on reverse strand to query [True]
         blockfas=T/F    : Whether to generate a combined fasta file of NUMT block regions (positive strand) [True]
+        depthplot=T/F   : Whether to output mtDNA depth plots of sequence coverage (requires R) [True]
+        depthsmooth=X   : Smooth out any read plateaus < X nucleotides in length [0]
+        peaksmooth=X    : Smooth out Xcoverage peaks < X depth difference to flanks (<1 = %Median) [0]
         nocovfas=T/F    : Whether to output the regions of mtDNA with no coverage & peak coverage [False]
         ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
         ```
@@ -448,14 +455,23 @@ class NUMTFinder(rje_obj.RJE_Object):
         SeqName,Start,End,Strand,BitScore,Expect,Length,Identity,mtFrag,FragNum,FragLen,FragGaps
         ```
 
-        **NOTE:** NUMT block fasta output is not yet implemented. Please contact the author if this is desired.
+        If `blockfas=T` then blocks are also output to `$BASEFILE.numtblock.fasta`.
+
 
         ## Coverage plot
 
         The final part of the NUMTFinder pipeline is to map all the (filtered) NUMT fragments back on to the original
         mtDNA and generate plot of the depth of coverage by NUMT fragments across the mtDNA genome. Note that for this
         output, any fragments spanning the circularisation point *will* be divided into two fragments. This will not
-        affect the depth plot, but will alter the accompanying "readlen" plot.
+        affect the depth plot, but will alter the accompanying "readlen" plot. By default, the rje_samtools depth plot
+        smoothing is turned off for NUMTFinder. This can be set with:
+
+        ```
+        depthsmooth=X   : Smooth out any read plateaus < X nucleotides in length [0]
+        peaksmooth=X    : Smooth out Xcoverage peaks < X depth difference to flanks (<1 = %Median) [0]
+        ```
+
+        To revert to rje_samtools defaults (used pre-v0.5.0), set `depthsmooth=200 peaksmooth=0.05`.
 
         If `nocovfas=T` then any regions of the mtDNA without any NUMT coverage will be output to `$BASEFILE.numtfrag.nocov.fasta`.
         The region with maximum coverage will also be output to `$BASEFILE.numtfrag.peak.fasta`. Note that this might be
@@ -645,6 +661,16 @@ class NUMTFinder(rje_obj.RJE_Object):
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             numtfrag = '{0}.numtsearch.unique.tdt'.format(self.basefile())
             mtlen = self.getInt('mtLen')
+            ## ~ [1a] Check and load existing data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+            fragout = '{0}.numtfrag.tdt'.format(self.basefile())
+            blockout = '{0}.numtblock.tdt'.format(self.basefile())
+            if not self.force() and rje.checkForFiles(filelist=[fragout,blockout],basename='',log=self.log,cutshort=True,ioerror=False,missingtext='Not found.'):
+                fragdb = self.db().addTable(fragout,mainkeys=['SeqName','Start','End','Strand'],name='numtfrag',expect=True,replace=True,uselower=False)
+                fragdb.dataFormat({'BitScore':'num','Start':'int','End':'int','mtStart':'int','mtyEnd':'int','Expect':'num','Length':'int','Identity':'int'})
+                blockdb = self.db().addTable(blockout,mainkeys=['SeqName','Start','End','Strand'],name='numtblock',expect=True,replace=True,uselower=False)
+                blockdb.dataFormat({'BitScore':'num','Start':'int','End':'int','mtStart':'int','mtyEnd':'int','Expect':'num','Length':'int','Identity':'int','FragNum':'int','FragLen':'int','FragGaps':'int'})
+                self.printLog('#RESUME','Picked up previous tables of results (force=F)')
+                return True
             ### ~ [2] Load NUMT fragments ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
             fragdb = self.db().addTable(numtfrag,mainkeys=['Query','Hit','SbjStart','SbjEnd'],name='numtfrag',expect=True,replace=True,uselower=False)
             fragdb.dropFields(['Positives'])
@@ -744,6 +770,15 @@ class NUMTFinder(rje_obj.RJE_Object):
             seqout = '{0}.numtblock.fasta'.format(self.baseFile())
             if not blockdb.entryNum():
                 self.printLog('#BLOCK','No NUMT blocks: no {0} output.'.format(seqout))
+                return False
+            ## ~ [1a] Check old output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+            if not self.force() and rje.checkForFiles(filelist=[seqout],basename='',log=self.log,cutshort=True,ioerror=False,missingtext='Not found.'):
+                seqcheck = rje_seqlist.SeqList(self.log,self.cmd_list+['summarise=F','seqin={0}'.format(seqout),'dna'])
+                self.printLog('\r#BLOCK','Found {0} fasta output for {1} out of {2} NUMT blocks (force=F)'.format(seqout,rje.iStr(seqcheck.seqNum()),rje.iStr(blockdb.entryNum())))
+                if seqcheck.seqNum() == blockdb.entryNum():
+                    return True
+                self.printLog('#REGEN','NUMT block and sequence count mismatch: regenerating.')
+            ## ~ [1b] Prep for output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
             seqin = self.obj['SeqIn']
             seqdict = seqin.seqNameDic()
             rje.backup(self,seqout)
@@ -752,11 +787,25 @@ class NUMTFinder(rje_obj.RJE_Object):
             if self.getBool('Append'): wmode = 'a'
             SEQOUT = open(seqout,wmode)
             outx = 0; ex = 0.0; etot = blockdb.entryNum()
+            prevseq = None
+            fullseq = None
+            seqname = None
+            seqlen = 0
             for ekey in blockdb.dataKeys():
                 self.progLog('\r#BLOCK','Outputting NUMT blocks to {0}: {1:.1f}%'.format(seqout,ex/etot)); ex += 100.0
                 entry = blockdb.dict['Data'][ekey]
                 seq = seqdict[entry['SeqName']]
-                (sname, sequence) = seqin.getSeqFrag(seq,fragstart=entry['Start'],fragend=entry['End'])
+                if seq != prevseq:
+                    (seqname,fullseq) = seqin.getSeq(seq,format='tuple')
+                    prevseq = seq
+                    seqlen = len(fullseq)
+                #i# New name
+                sname = string.split(seqname)
+                sname[0] = '%s.%s-%s' % (sname[0],rje.preZero(entry['Start'],seqlen),rje.preZero(entry['End'],seqlen))
+                sname.insert(1,'(Pos %s - %s)' % (rje.iStr(entry['Start']),rje.iStr(entry['End'])))
+                sname = string.join(sname)
+                sequence = fullseq[entry['Start']-1:entry['End']]
+                #X#(sname, sequence) = seqin.getSeqFrag(seq,fragstart=entry['Start'],fragend=entry['End'])
                 SEQOUT.write('>{0}\n{1}\n'.format(sname,sequence)); outx += 1
             SEQOUT.close()
             self.printLog('\r#BLOCK','Output {2} of {1} NUMT block sequences to {0}'.format(seqout,etot,outx))
@@ -768,8 +817,10 @@ class NUMTFinder(rje_obj.RJE_Object):
         Generates depth plots for mitochondrial genome.
         '''
         try:### ~ [1] Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-            samcmd = ['seqin={0}'.format(self.getStr('mtQuery')),'basefile={0}.numtfrag'.format(self.baseFile())]
-            sam = rje_samtools.SAMtools(self.log,['depthplot=T','readlen=T']+self.cmd_list+samcmd)
+            samcmd = ['seqin={0}'.format(self.getStr('mtQuery')),'basefile={0}.numtfrag'.format(self.baseFile()),
+                      'minreadlen={0}'.format(self.getInt('MinFragLen'))]
+            samdefault = ['depthsmooth=0','peaksmooth=0','depthplot=T','readlen=T']
+            sam = rje_samtools.SAMtools(self.log,samdefault+self.cmd_list+samcmd)
             sam.obj['DB'] = self.obj['DB']
             mtlen = self.getInt('mtLen')
             seq = self.obj['mtDNA'].seqs()[0]
@@ -784,21 +835,27 @@ class NUMTFinder(rje_obj.RJE_Object):
             riddb.setFields(['#','Locus','mtStart','mtEnd','RLen','Strand'])
             riddb.renameField('mtStart', 'Start')
             riddb.renameField('mtEnd', 'End')
+            riddb.dataFormat({'Start':'int','End':'int','#':'int','RLen':'int'})
             splitx = 0
             nextid = 1
             if riddb.entries():
                 nextid = max(riddb.dataList(riddb.entries(),'#')) + 1
             self.printLog('#SPLIT','Splitting fragments that span circularisation for depth plots')
-            for rentry in riddb.entries():
+            for rentry in riddb.entries()[0:]:
                 #i# Split hits that go off the end
-                if rentry['Strand'] == '+' and rentry['Start'] > rentry['End']:
+                if rentry['Start'] > rentry['End']:
+                    #self.bugPrint(rentry)
                     newentry = rje.combineDict({},rentry)
                     newentry['End'] = mtlen
                     newentry['#'] = nextid
+                    newentry['RLen'] = mtlen - newentry['Start'] + 1
+                    rentry['RLen'] = rentry['End']
                     riddb.addEntry(newentry)
                     rentry['Start'] = 1
                     splitx += 1
                     nextid += 1
+                    #self.bugPrint(newentry)
+                    #self.deBug(rentry)
             self.printLog('#SPLIT','Split {0} NUMT fragments that span circularisation for depth plots'.format(splitx))
             riddb.renameField('#','RID')
             riddb.newKey(['RID'])
@@ -828,11 +885,12 @@ class NUMTFinder(rje_obj.RJE_Object):
                 if entry['X']:
                     if regi:
                         covx += (entry['Pos'] - regi + 1) * (entry['X'] + regx) / 2.0
-                        if regx > peak[2] and regx == entry['X']: peak = (regi,entry['Pos'],regx)
+                        if entry['X'] >= peak[2]: peak = (regi,entry['Pos'],regx)
                     regi = entry['Pos']
                     regx = entry['X']
                     i = 0
                     continue
+                else: regi = 0
                 if i:
                     reglist.append(mtdna.getSeqFrag(seq,fragstart=i,fragend=entry['Pos']))
                     covbp -= (entry['Pos'] - i + 1)
