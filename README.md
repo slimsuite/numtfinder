@@ -1,7 +1,7 @@
 # NUMTFinder: Nuclear mitochondrial fragment (NUMT) search tool
 
 ```
-NUMTFinder v0.5.1
+NUMTFinder v0.5.4
 ```
 
 For a better rendering and navigation of this document, please download and open [`./docs/numtfinder.docs.html`](./docs/numtfinder.docs.html), or visit <https://slimsuite.github.io/numtfinder/>.
@@ -27,6 +27,12 @@ Plans for future releases include:
 * assembly masking options
 * options to restrict NUMT blocks to fully collinear hits.
 * automated running of Diploidocus long-read regcheck on fragments and blocks
+
+## Citation
+
+If you use NUMTFinder in a publication, please cite:
+
+    Edwards RJ, Field MA, Ferguson JM, Dudchenko O, Keilwagen K, Rosen BD, Johnson GS, Rice ES, Hillier L, Hammond JM, Towarnicki SG, Omer A, Khan R, Skvortsova K, Bogdanovic O, Zammit RA, Aiden EL, Warren WC & Ballard JWO (2021): Chromosome-length genome assembly and structural variations of the primal Basenji dog (Canis lupus familiaris) genome. BMC Genomics 22:188 [PMID: [33726677](https://pubmed.ncbi.nlm.nih.gov/33726677/)]
 
 ---
 
@@ -68,7 +74,7 @@ dochtml=T/F     : Generate HTML NUMTFinder documentation (*.docs.html) instead o
 ### ~ NUMTFinder search options ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 circle=T/F      : Whether the mtDNA is circular [True]
 blaste=X        : BLAST+ blastn evalue cutoff for NUMT search [1e-4]
-minfraglen=INT  : Minimum local (NUMT fragment) alignment length (sets GABLAM localmin=X) [0]
+minfraglen=INT  : Minimum local (NUMT fragment) alignment length (sets GABLAM localmin=X) [10]
 exclude=LIST    : Exclude listed sequence names from search [mtDNA sequence name]
 mtmaxcov=PERC   : Maximum percentage coverage of mtDNA (at mtmaxid identity) to allow [99]
 mtmaxid=PERC    : Maximum percentage identity of mtDNA hits > mtmaxcov coverage to allow [99]
@@ -86,7 +92,7 @@ fragfas=T/F     : Whether to output NUMT fragment to fasta file [True]
 fragrevcomp=T/F : Whether to reverse-complement DNA fragments that are on reverse strand to query [True]
 blockfas=T/F    : Whether to generate a combined fasta file of NUMT block regions (positive strand) [True]
 depthplot=T/F   : Whether to output mtDNA depth plots of sequence coverage (requires R) [True]
-depthsmooth=X   : Smooth out any read plateaus < X nucleotides in length [0]
+depthsmooth=X   : Smooth out any read plateaus < X nucleotides in length [10]
 peaksmooth=X    : Smooth out Xcoverage peaks < X depth difference to flanks (<1 = %Median) [0]
 nocovfas=T/F    : Whether to output the regions of mtDNA with no coverage & peak coverage [False]
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
@@ -195,7 +201,7 @@ affect the depth plot, but will alter the accompanying "readlen" plot. By defaul
 smoothing is turned off for NUMTFinder. This can be set with:
 
 ```
-depthsmooth=X   : Smooth out any read plateaus < X nucleotides in length [0]
+depthsmooth=X   : Smooth out any read plateaus < X nucleotides in length [10]
 peaksmooth=X    : Smooth out Xcoverage peaks < X depth difference to flanks (<1 = %Median) [0]
 ```
 
@@ -264,4 +270,4 @@ More details will be added in future releases.
 
 
 <br>
-<small>&copy; 2021 Richard Edwards | richard.edwards@unsw.edu.au</small>
+<small>&copy; 2023 Richard Edwards | rich.edwards@uwa.edu.au</small>
