@@ -1,7 +1,7 @@
 ---
-title: "NUMTFinder V0.5.4 Documentation"
+title: "NUMTFinder V0.5.5 Documentation"
 author: "Richard J. Edwards"
-date: "2024-05-01"
+date: "2024-09-19"
 output:
   html_document:
     css: http://www.slimsuite.unsw.edu.au/stylesheets/slimhtml.css

@@ -19,8 +19,8 @@
 """
 Module:       NUMTFinder
 Description:  Nuclear mitochondrial fragment (NUMT) search tool
-Version:      0.5.4
-Last Edit:    03/03/23
+Version:      0.5.5
+Last Edit:    19/09/23
 Citation:     Edwards RJ et al. (2021), BMC Genomics [PMID: 33726677]
 GitHub:       https://github.com/slimsuite/numtfinder
 Copyright (C) 2021  Richard J. Edwards - See source code for GNU License Notice
@@ -104,6 +104,7 @@ def history():  ### Program History - only a method for PythonWin collapsing! ##
     # 0.5.2 - Fixed bug with circle=F mtDNA.
     # 0.5.3 - Tweaked defaults to put back some smoothing (10bp not 200bp) and min fragment size (10bp)
     # 0.5.4 - Py3 bug fixes.
+    # 0.5.5 - Minor underlying code changes.
     '''
 #########################################################################################################################
 def todo():     ### Major Functionality to Add - only a method for PythonWin collapsing! ###
@@ -128,7 +129,7 @@ def todo():     ### Major Functionality to Add - only a method for PythonWin col
 #########################################################################################################################
 def makeInfo(): ### Makes Info object which stores program details, mainly for initial print to screen.
     '''Makes Info object which stores program details, mainly for initial print to screen.'''
-    (program, version, last_edit, copy_right) = ('NUMTFinder', '0.5.4', 'March 2023', '2021')
+    (program, version, last_edit, copy_right) = ('NUMTFinder', '0.5.5', 'September 2023', '2021')
     description = 'Nuclear mitochondrial fragment (NUMT) search tool'
     author = 'Dr Richard J. Edwards.'
     comments = ['This program is still in development and has not been published.',rje_obj.zen()]
@@ -171,7 +172,7 @@ def setupProgram(): ### Basic Setup of Program when called from commandline.
         out.verbose(2,2,cmd_list,1)                         # Prints full commandlist if verbosity >= 2 
         out.printIntro(info)                                # Prints intro text using details from Info object
         cmd_list = cmdHelp(info,out,cmd_list)               # Shows commands (help) and/or adds commands from user
-        log = rje.setLog(info,out,cmd_list)                 # Sets up Log object for controlling log file output
+        log = rje.setLog(info,out,cmd_list,py3warn=False)   # Sets up Log object for controlling log file output
         return (info,out,log,cmd_list)                      # Returns objects for use in program
     except SystemExit: sys.exit()
     except KeyboardInterrupt: sys.exit()
